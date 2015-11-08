@@ -1,133 +1,130 @@
 var gl;
-var mouseDown;
-var mouseUp;
 var program;
 
-window.onload = function init() {
-  // Get canvas and setup webGL
-  var canvas = document.getElementById("gl-canvas");
-  gl = WebGLUtils.setupWebGL(canvas);
-  if (!gl) {
-    alert("WebGL isn't available");
-  }
+var mouseDownX;
+var mouseDownY;
 
-  // Configure viewport
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0, 0, 0, 1.0);
+var mouseUpX;
+var mouseUpY;
 
-  // Init shader program and bind it
-  program = initShaders(gl, "vertex-shader", "fragment-shader");
-  gl.useProgram(program);
+var green = 0;
+var red = 0;
+var blue = 0;
 
-  var colors = new Float32Array([1, 1, 1, 1,
-    1, 1, 1, 1,
-    1, 1, 1, 1,
-    1, 1, 1, 1
-  ]);
+window.onload = function init()
+{
+	// Get canvas and setup webGL
+	
+	var canvas = document.getElementById("gl-canvas");
+	canvas.addEventListener("mousedown", mouseDown);
+	canvas.addEventListener("mouseup", mouseUp);
+	document.addEventListener("keypress", changeColor);
+	
+	gl = WebGLUtils.setupWebGL(canvas);
+	if (!gl) { alert("WebGL isn't available"); }
 
-  setColorBuffer(colors);
+	
+	// Configure viewport
 
-  // add listener
-  canvas.addEventListener("mousedown", eventMouseDown);
-  canvas.addEventListener("mouseup", eventMouseUp);
-  window.addEventListener("keypress", setColor);
+	gl.viewport(0,0,canvas.width,canvas.height);
+	gl.clearColor(1.0,1.0,1.0,1.0);
 
-  render();
+	// Init shader program and bind it
+
+	program = initShaders(gl, "vertex-shader", "fragment-shader");
+
+	gl.useProgram(program);
 };
 
-function eventMouseDown(e) {
-  mouseDown = e;
+function render()
+{
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
-function eventMouseUp(e) {
-  mouseUp = e;
-  drawRectangle();
+function normValue(value, valueMin, valueMax, resultMin, resultMax) // 212, 0, 512, -1, 1
+{
+	return (((value - valueMin) / (valueMax - valueMin)) * (resultMax - resultMin) + resultMin);
 }
 
-function drawRectangle() {
-  var vertices = new Float32Array([
-    normPos(mouseDown.clientX), normPos(mouseDown.clientY),
-    normPos(mouseDown.clientX), normPos(mouseUp.clientY),
-    normPos(mouseUp.clientX), normPos(mouseDown.clientY),
-    normPos(mouseUp.clientX), normPos(-mouseUp.clientY)
-  ]);
-
-  console.log(vertices);
-
-  var colors = new Float32Array([1, 0, 0, 1,
-    0, 1, 0, 1,
-    0, 0, 1, 1,
-    1, 1, 0, 1
-  ]);
-
-  setVerticesBuffer(vertices)
+function mouseDown(event)
+{
+	console.log("mouseDown: start");
+	console.log("x:" + event.offsetX + ", y:" + event.offsetY);
+	mouseDownX = normValue(event.offsetX, 0, 512, -1, 1);
+	mouseDownY = normValue(event.offsetY, 0, 512, -1, 1);
+	mouseDownY = mouseDownY * (-1);
+	console.log("x:" + mouseDownX + ", y:" + mouseDownY);
 }
 
-function setColor(e) {
-  var colors;
-
-  if (e.key.toLowerCase() == "r") {
-    colors = new Float32Array([1, 0, 0, 1,
-      1, 0, 0, 1,
-      1, 0, 0, 1,
-      1, 0, 0, 1
-    ]);
-  } else if (e.key.toLowerCase() == "g") {
-    colors = new Float32Array([0, 1, 0, 1,
-      0, 1, 0, 1,
-      0, 1, 0, 1,
-      0, 1, 0, 1
-    ]);
-  } else if (e.key.toLowerCase() == "b") {
-    colors = new Float32Array([0, 0, 1, 1,
-      0, 0, 1, 1,
-      0, 0, 1, 1,
-      0, 0, 1, 1
-    ]);
-  } else {
-    colors = new Float32Array([1, 1, 1, 1,
-      1, 1, 1, 1,
-      1, 1, 1, 1,
-      1, 1, 1, 1
-    ]);
-  }
-
-  setColorBuffer(colors);
+function mouseUp(event) {
+	console.log("mouseUp: start");
+	console.log("x:" + event.offsetX + ", y:" + event.offsetY);
+	mouseUpX = normValue(event.offsetX, 0, 512, -1, 1);
+	mouseUpY = normValue(event.offsetY, 0, 512, -1, 1);
+	mouseUpY = mouseUpY * (-1);
+	console.log("x:" + mouseDownX + ", y:" + mouseDownY);
+	renderSquare();
 }
 
-function setVerticesBuffer(vertices) {
-  var bufferId = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
-  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-  var vPosition = gl.getAttribLocation(program, "vPosition");
-  gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(vPosition);
+function changeColor(event) {
+	console.log("changeColor: start");
+	if (event.keyCode == 71 || event.keyCode == 103) {
+		red = 0;
+		green = 255;
+		blue = 0;
+	}
+	else if (event.keyCode == 114 || event.keyCode == 82) {
+		red = 255;
+		green = 0;
+		blue = 0;
+		
+	}
+	else if (event.keyCode == 98 || event.keyCode == 66) {
+		red = 0;
+		green = 0;
+		blue = 255;
+	}
 }
 
-function setColorBuffer(colors) {
-  var cBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+function renderSquare() {
+	if ((mouseUpX > mouseDownX && mouseUpY > mouseDownY)
+		|| (mouseUpX < mouseDownX && mouseUpY < mouseDownY)) {
+		var vertices = new Float32Array([	mouseDownX, mouseDownY, 
+									mouseUpX, mouseDownY,
+									mouseDownX, mouseUpY,
+									mouseUpX, mouseUpY]);
+	} else {
+		var vertices = new Float32Array([	mouseDownX, mouseDownY, 
+											mouseDownX, mouseUpY,
+											mouseUpX, mouseDownY,
+											mouseUpX, mouseUpY]);
+	}
+		
+	var colors = new Float32Array([ red, green, blue, 1, 
+									red, green, blue, 1,
+									red, green, blue, 1,
+									red, green, blue, 1]);
+									
+	// Load colors into the GPU and associate shader variables
+	
+	var cBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+	
+	var vColor = gl.getAttribLocation(program, "vColor");
+	gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(vColor);
 
-  var vColor = gl.getAttribLocation(program, "vColor");
-  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(vColor);
-}
+	// Load positions into the GPU and associate shader variables
 
-function normPos(value) {
-  return normValue(value, 0, 512, -1, 1);
-}
+	var bufferId = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-function normValue(value, valueMin, valueMax, resultMin, resultMax) {
-  value = Math.abs(value) - (valueMax / 2);
-
-  return ((((value) - (valueMin)) / ((valueMax) - (valueMin))) *
-    (((resultMax) - (resultMin)) + (resultMin)));
-}
-
-function render() {
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-  requestAnimFrame(render);
+	var vPosition = gl.getAttribLocation(program, "vPosition");
+	gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(vPosition);
+	
+	render();
 }
