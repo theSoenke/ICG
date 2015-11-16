@@ -1,0 +1,53 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<title>WebGL Example</title>
+		
+		<script id="vertex-shader" type="x-shader/x-vertex">
+			attribute vec4 vPosition;
+			attribute vec4 vColor;
+
+			varying vec4 fColor;
+			void main()
+			{
+				fColor = vColor;
+				gl_Position = vPosition;
+			}
+		</script>
+		<script id="fragment-shader" type="x-shader/x-fragment">
+			precision mediump float;
+			
+			varying vec4 fColor;
+			
+			uniform float radius1;
+			uniform float radius2;		
+			uniform float brightnessOffset;
+			vec2 centerOfCircle = vec2(256.0, 256.0);
+			void main()
+			{
+				vec2 fragCoord = vec2(gl_FragCoord.x, gl_FragCoord.y);
+				float distance = distance(centerOfCircle, fragCoord);
+				if (distance >= radius1 && distance <= radius2) {
+					gl_FragColor = vec4(fColor.r*brightnessOffset, fColor.g*brightnessOffset, fColor.b*brightnessOffset, fColor.a);
+				} else {
+					gl_FragColor = fColor;	
+				}
+			}
+		</script>
+
+		<script type="text/javascript" src="../Common/webgl-utils.js">
+		</script>
+		<script type="text/javascript" src="../Common/initShaders.js">
+		</script>
+		<script type="text/javascript" src="ring2.js">
+		</script>
+	</head>
+	<body>
+
+		<canvas id="gl-canvas" width="512" height="512">
+			If you see this, your browser doesn't support WebGL.
+		</canvas>
+		
+	</body>
+</html>
