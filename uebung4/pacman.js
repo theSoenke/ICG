@@ -85,9 +85,12 @@ function getKeyCode(event) {
       var ty = walk[1] + Math.sin(angle) * 0.01;
 
       if (checkCollision(tx, ty)) {
-        walk = new Float32Array([tx, ty]);
+        walk[0] = tx;
+        walk[1] = ty;
         gl.uniform2fv(walkLoc, walk);
-        centerVertex = new Float32Array([centerVertex[0] + Math.cos(angle) * 0.01, centerVertex[1] + Math.sin(angle) * 0.01, 0.0, 0.0]);
+
+        centerVertex[0] = centerVertex[0] + Math.cos(angle) * 0.01;
+        centerVertex[1] = centerVertex[1] + Math.sin(angle) * 0.01;
         gl.uniform3fv(vCenterLoc, centerVertex);
       }
       break;
@@ -100,10 +103,13 @@ function getKeyCode(event) {
       var ty = walk[1] - Math.sin(angle) * 0.01;
 
       if (checkCollision(tx, ty)) {
-        walk = new Float32Array([tx, ty]);
+        walk[0] = tx;
+        walk[1] = ty;
         gl.uniform2fv(walkLoc, walk);
-        centerVertex = new Float32Array([centerVertex[0] - Math.cos(angle) * 0.01, centerVertex[1] - Math.sin(angle) * 0.01]);
-        gl.uniform2fv(vCenterLoc, centerVertex);
+
+        centerVertex[0] = centerVertex[0] - Math.cos(angle) * 0.01;
+        centerVertex[1] = centerVertex[1] - Math.sin(angle) * 0.01;
+        gl.uniform3fv(vCenterLoc, centerVertex);
       }
       break;
   }
