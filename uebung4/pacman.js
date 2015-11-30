@@ -5,7 +5,8 @@ var numberOfVertices;
 
 var numberToDraw = 2;
 
-var step = 0.0;
+var centerVertex = new Float32Array([0, 0]);
+var walk = new Float32Array([0, 0]);
 var angle =	0.0;
 
 var programObject;
@@ -67,6 +68,7 @@ function getKeyCode(event)
 {
 	event = event || window.event;
 	var pressedKey = event.keyCode;
+	var oneDegree = (2.0 * PI) / 360.0;
 
 	switch(pressedKey)
 	{
@@ -77,10 +79,15 @@ function getKeyCode(event)
 			console.log("rotate left");
 			break;
 		case 38: //^
-			step += 0.01;
-			loc = gl.getUniformLocation(programObject, "step");
-			gl.uniform1f(loc, step);
-			console.log("go forward");
+			if (walk[0]+Math.cos(angle)*0.01 <= 1 || walk[1]+Math.sin(angle)*0.01 <= 1) {
+				walk = new Float32Array([walk[0]+Math.cos(angle)*0.01, walk[1]+Math.sin(angle)*0.01]);
+				loc = gl.getUniformLocation(programObject, "walk");
+				gl.uniform2fv(loc, walk);
+				centerVertex = new Float32Array([centerVertex[0]+Math.cos(angle)*0.01, centerVertex[1]+Math.sin(angle)*0.01]);
+				loc = gl.getUniformLocation(programObject, "vCenter");
+				gl.uniform2fv(loc, centerVertex);
+				console.log("go forward");
+			}
 			break;
 		case 39: //>
 			angle -= (2.0 * PI) / 360.0;
@@ -89,10 +96,15 @@ function getKeyCode(event)
 			console.log("rotate right");
 			break;
 		case 40: //v
-			step -= 0.01;
-			loc = gl.getUniformLocation(programObject, "step");
-			gl.uniform1f(loc, step);
-			console.log("go backwards");
+			if (walk[0]-Math.cos(angle)*0.01 >= -1 || walk[1]-Math.sin(angle)*0.01 >= -1) {
+				walk = new Float32Array([walk[0]-Math.cos(angle)*0.01, walk[1]-Math.sin(angle)*0.01]);
+				loc = gl.getUniformLocation(programObject, "walk");
+				gl.uniform2fv(loc, walk);
+				centerVertex = new Float32Array([centerVertex[0]-Math.cos(angle)*0.01, centerVertex[1]-Math.sin(angle)*0.01]);
+				loc = gl.getUniformLocation(programObject, "vCenter");
+				gl.uniform2fv(loc, centerVertex);
+				console.log("go backwards");
+			}
 			break;
 	}
 	render();
