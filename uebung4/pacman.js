@@ -81,16 +81,14 @@ function getKeyCode(event) {
       gl.uniform1f(angleLoc, angle);
       break;
     case 38: //^
-      if (walk[0] + Math.cos(angle) * 0.01 <= 1 || walk[1] + Math.sin(angle) * 0.01 <= 1) {
-        var tx = walk[0] + Math.cos(angle) * 0.01;
-        var ty = walk[1] + Math.sin(angle) * 0.01;
+      var tx = walk[0] + Math.cos(angle) * 0.01;
+      var ty = walk[1] + Math.sin(angle) * 0.01;
 
-        if (checkCollision(tx, ty)) {
-          walk = new Float32Array([tx, ty]);
-          gl.uniform2fv(walkLoc, walk);
-          centerVertex = new Float32Array([centerVertex[0] + Math.cos(angle) * 0.01, centerVertex[1] + Math.sin(angle) * 0.01, 0.0, 0.0]);
-          gl.uniform3fv(vCenterLoc, centerVertex);
-        }
+      if (checkCollision(tx, ty)) {
+        walk = new Float32Array([tx, ty]);
+        gl.uniform2fv(walkLoc, walk);
+        centerVertex = new Float32Array([centerVertex[0] + Math.cos(angle) * 0.01, centerVertex[1] + Math.sin(angle) * 0.01, 0.0, 0.0]);
+        gl.uniform3fv(vCenterLoc, centerVertex);
       }
       break;
     case 39: //>
@@ -98,16 +96,14 @@ function getKeyCode(event) {
       gl.uniform1f(angleLoc, angle);
       break;
     case 40: //v
-      if (walk[0] - Math.cos(angle) * 0.01 >= -1 || walk[1] - Math.sin(angle) * 0.01 >= -1) {
-        var tx = walk[0] - Math.cos(angle) * 0.01;
-        var ty = walk[1] - Math.sin(angle) * 0.01;
+      var tx = walk[0] - Math.cos(angle) * 0.01;
+      var ty = walk[1] - Math.sin(angle) * 0.01;
 
-        if (checkCollision(tx, ty)) {
-          walk = new Float32Array([tx, ty]);
-          gl.uniform2fv(walkLoc, walk);
-          centerVertex = new Float32Array([centerVertex[0] - Math.cos(angle) * 0.01, centerVertex[1] - Math.sin(angle) * 0.01]);
-          gl.uniform2fv(vCenterLoc, centerVertex);
-        }
+      if (checkCollision(tx, ty)) {
+        walk = new Float32Array([tx, ty]);
+        gl.uniform2fv(walkLoc, walk);
+        centerVertex = new Float32Array([centerVertex[0] - Math.cos(angle) * 0.01, centerVertex[1] - Math.sin(angle) * 0.01]);
+        gl.uniform2fv(vCenterLoc, centerVertex);
       }
       break;
   }
