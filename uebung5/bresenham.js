@@ -1,4 +1,6 @@
 var canvas;
+var gl;
+
 var size = 10;
 var fieldStart = [];
 var fieldEnd = [];
@@ -15,8 +17,8 @@ window.onload = function pacman() {
 
   // Specify position and color of the vertices
 
-  var vertices = rasterize(size);
-  numVertices = size * 12 - 12;
+  var vertices = drawGrid(size, []);
+  loadVertices(vertices);
 
   // Configure viewport
 
@@ -30,9 +32,6 @@ window.onload = function pacman() {
 
   // Load positions into the GPU and associate shader variables
 
-  var bufferId = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
-  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
   var vPosition = gl.getAttribLocation(program, "vPosition");
   gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
@@ -50,9 +49,24 @@ function mouseDown(e) {
 
 function mouseUp(e) {
   fieldEnd = getField(e.offsetX, e.offsetY);
+  bresenham();
 }
 
-function rasterize(size) {
+function bresenham() {
+  var filledFields = [];
+
+  filledFields.push(fieldStart);
+  filledFields.push(fieldEnd);
+
+  // TODO add fields with bresenham algorithmus to filledFields
+
+  var vertices = drawGrid(size, filledFields);
+  loadVertices(vertices);
+
+  render();
+}
+
+function drawGrid(size, fields) {
   var vertices = [];
   var fieldSize = canvas.width / size;
 
@@ -90,7 +104,36 @@ function rasterize(size) {
     vertices.push(1.0);
   }
 
+  numVertices = (size * 12 - 12);
+
+// fill fields
+  for (var i = 0; i < fields.length; i++) {
+      var field = fields[i];
+
+      vertices.push(normPos(field.x * fieldSize));
+      vertices.push(normPos(field.y * fieldSize));
+      vertices.push(normPos(field.x * fieldSize + fieldSize));
+      vertices.push(normPos(field.y * fieldSize));
+      vertices.push(normPos(field.x * fieldSize));
+      vertices.push(normPos(field.y * fieldSize + fieldSize));
+
+      vertices.push(normPos(field.x * fieldSize));
+      vertices.push(normPos(field.y * fieldSize + fieldSize));
+      vertices.push(normPos(field.x * fieldSize + fieldSize));
+      vertices.push(normPos(field.y * fieldSize + fieldSize));
+      vertices.push(normPos(field.x * fieldSize + fieldSize));
+      vertices.push(normPos(field.y * fieldSize));
+
+      numVertices += 6;
+    }
+
   return new Float32Array(vertices);
+}
+
+function loadVertices(vertices) {
+  var bufferId = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 }
 
 function getField(posX, posY) {
@@ -102,8 +145,12 @@ function getField(posX, posY) {
 
   return {
     x: posX,
-    y: posY
+    y: size - posY - 1
   };
+}
+
+function normPos(value) {
+  return normValue(value, 0, canvas.width, -1, 1);
 }
 
 function normValue(value, valueMin, valueMax, resultMin, resultMax) {
