@@ -45,6 +45,15 @@ function rasterize(size) {
     vertices.push(posY);
     vertices.push(1.0);
     vertices.push(posY);
+    vertices.push(1.0);
+    vertices.push(posY-0.01);
+
+    vertices.push(-1.0);
+    vertices.push(posY);
+    vertices.push(-1.0);
+    vertices.push(posY-0.01);
+    vertices.push(1.0);
+    vertices.push(posY-0.01);
   }
 
   for (var i = 1; i < size; i++) {
@@ -53,9 +62,22 @@ function rasterize(size) {
     vertices.push(-1.0);
     vertices.push(posX);
     vertices.push(1.0);
+    vertices.push(posX-0.01);
+    vertices.push(1.0);
+
+    vertices.push(posX);
+    vertices.push(-1.0);
+    vertices.push(posX-0.01);
+    vertices.push(-1.0);
+    vertices.push(posX-0.01);
+    vertices.push(1.0);
   }
 
   return new Float32Array(vertices);
+}
+
+function getField(posX, posY){
+
 }
 
 function normValue(value, valueMin, valueMax, resultMin, resultMax) {
@@ -65,6 +87,6 @@ function normValue(value, valueMin, valueMax, resultMin, resultMax) {
 
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.LINES, 0, 36);
+  gl.drawArrays(gl.TRIANGLES, 0, 108);
   //requestAnimFrame(render);
 }
