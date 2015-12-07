@@ -1,4 +1,8 @@
 var canvas;
+var size = 10;
+var fieldStart = [];
+var fieldEnd = [];
+var numVertices;
 
 window.onload = function pacman() {
   // Get canvas and setup webGL
@@ -11,7 +15,8 @@ window.onload = function pacman() {
 
   // Specify position and color of the vertices
 
-  var vertices = rasterize(10);
+  var vertices = rasterize(size);
+  numVertices = size * 12 - 12;
 
   // Configure viewport
 
@@ -32,8 +37,20 @@ window.onload = function pacman() {
   var vPosition = gl.getAttribLocation(program, "vPosition");
   gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(vPosition);
+
+  canvas.addEventListener("mousedown", mouseDown);
+  canvas.addEventListener("mouseup", mouseUp);
+
   render();
 };
+
+function mouseDown(e) {
+  fieldStart = getField(e.offsetX, e.offsetY);
+}
+
+function mouseUp(e) {
+  fieldEnd = getField(e.offsetX, e.offsetY);
+}
 
 function rasterize(size) {
   var vertices = [];
@@ -46,14 +63,14 @@ function rasterize(size) {
     vertices.push(1.0);
     vertices.push(posY);
     vertices.push(1.0);
-    vertices.push(posY-0.01);
+    vertices.push(posY - 0.01);
 
     vertices.push(-1.0);
     vertices.push(posY);
     vertices.push(-1.0);
-    vertices.push(posY-0.01);
+    vertices.push(posY - 0.01);
     vertices.push(1.0);
-    vertices.push(posY-0.01);
+    vertices.push(posY - 0.01);
   }
 
   for (var i = 1; i < size; i++) {
@@ -62,22 +79,31 @@ function rasterize(size) {
     vertices.push(-1.0);
     vertices.push(posX);
     vertices.push(1.0);
-    vertices.push(posX-0.01);
+    vertices.push(posX - 0.01);
     vertices.push(1.0);
 
     vertices.push(posX);
     vertices.push(-1.0);
-    vertices.push(posX-0.01);
+    vertices.push(posX - 0.01);
     vertices.push(-1.0);
-    vertices.push(posX-0.01);
+    vertices.push(posX - 0.01);
     vertices.push(1.0);
   }
 
   return new Float32Array(vertices);
 }
 
-function getField(posX, posY){
+function getField(posX, posY) {
+  var fieldSize = canvas.width / size;
 
+  posX = parseInt(posX / fieldSize);
+  posY = parseInt(posY / fieldSize);
+  console.log("x: " + posX + " y: " + posY);
+
+  return {
+    x: posX,
+    y: posY
+  };
 }
 
 function normValue(value, valueMin, valueMax, resultMin, resultMax) {
@@ -87,6 +113,6 @@ function normValue(value, valueMin, valueMax, resultMin, resultMax) {
 
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.TRIANGLES, 0, 108);
+  gl.drawArrays(gl.TRIANGLES, 0, numVertices);
   //requestAnimFrame(render);
 }
