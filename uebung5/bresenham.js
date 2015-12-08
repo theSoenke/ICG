@@ -2,8 +2,8 @@ var canvas;
 var gl;
 
 var size = 10;
-var fieldStart = [];
-var fieldEnd = [];
+var fieldStart;
+var fieldEnd;
 var numVertices;
 
 window.onload = function pacman() {
@@ -18,7 +18,6 @@ window.onload = function pacman() {
   // Specify position and color of the vertices
 
   var vertices = drawGrid(size, []);
-  loadVertices(vertices);
 
   // Configure viewport
 
@@ -31,7 +30,7 @@ window.onload = function pacman() {
   gl.useProgram(program);
 
   // Load positions into the GPU and associate shader variables
-
+  loadVertices(vertices);
 
   var vPosition = gl.getAttribLocation(program, "vPosition");
   gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
@@ -105,27 +104,29 @@ function drawGrid(size, fields) {
   }
 
   numVertices = (size * 12 - 12);
+  var length = fields.length;
 
-// fill fields
-  for (var i = 0; i < fields.length; i++) {
-      var field = fields[i];
+  // fill fields
+  for (var i = 0; i < 1; i++) {
 
-      vertices.push(normPos(field.x * fieldSize));
-      vertices.push(normPos(field.y * fieldSize));
-      vertices.push(normPos(field.x * fieldSize + fieldSize));
-      vertices.push(normPos(field.y * fieldSize));
-      vertices.push(normPos(field.x * fieldSize));
-      vertices.push(normPos(field.y * fieldSize + fieldSize));
+    var field = getField(100, 200);
 
-      vertices.push(normPos(field.x * fieldSize));
-      vertices.push(normPos(field.y * fieldSize + fieldSize));
-      vertices.push(normPos(field.x * fieldSize + fieldSize));
-      vertices.push(normPos(field.y * fieldSize + fieldSize));
-      vertices.push(normPos(field.x * fieldSize + fieldSize));
-      vertices.push(normPos(field.y * fieldSize));
+    vertices.push(normPos(field.x * fieldSize));
+    vertices.push(normPos(field.y * fieldSize));
+    vertices.push(normPos(field.x * fieldSize + fieldSize));
+    vertices.push(normPos(field.y * fieldSize));
+    vertices.push(normPos(field.x * fieldSize));
+    vertices.push(normPos(field.y * fieldSize + fieldSize));
 
-      numVertices += 6;
-    }
+    vertices.push(normPos(field.x * fieldSize));
+    vertices.push(normPos(field.y * fieldSize + fieldSize));
+    vertices.push(normPos(field.x * fieldSize + fieldSize));
+    vertices.push(normPos(field.y * fieldSize + fieldSize));
+    vertices.push(normPos(field.x * fieldSize + fieldSize));
+    vertices.push(normPos(field.y * fieldSize));
+
+    numVertices += 6;
+  }
 
   return new Float32Array(vertices);
 }
