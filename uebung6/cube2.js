@@ -16,80 +16,87 @@ var viewMatrix;
 var projectionMatrixLoc;
 var projectionMatrix;
 
-var rotationSpeed;
 var lookAt;
 var camPos;
 
-var LastX;
-
 function handleKeyPress(e)
 {
+	console.log("Keyboard:");
+	
+	var relCamPos = [0,0,0];
+	vec3.sub(relCamPos, lookAt, camPos);
+	
 	switch(e.keyCode)
 	{
-		case 38: // arrow-up
-			rotationSpeed++;
-			console.log("positiv");
-			break;
-		case 40: // arrow-down
-			rotationSpeed--;
-			console.log("negativ");
-			break; 
 		case 65: //a
-			var temp = [0,0,0];
-			vec3.subtract(temp, lookAt, camPos)
-			vec3.rotateY(temp,temp,lookAt, -90* Math.PI / 180)
-			vec3.scale(temp, temp, 0.01);
-			//vec3.add(camPos, camPos, temp);
-			camPos[0] += temp[0];
-			camPos[2] += temp[2];
-			//vec3.add(lookAt, lookAt, temp);
+			vec3.rotateY(relCamPos, relCamPos, lookAt, -90 * Math.PI / 180);
+			vec3.scale(relCamPos, relCamPos, 0.01);
+			
+			camPos[0] += relCamPos[0];
+			camPos[2] += relCamPos[2];
+			
+			//lookAt[0] += relCamPos[0];
+			
+			console.log("a");
 			break;
 		case 87: //w
-			camPos[0] += 0.1*(lookAt[0]-camPos[0]);
-			camPos[1] += 0.1*(lookAt[1]-camPos[1]);
-			camPos[2] += 0.1*(lookAt[2]-camPos[2]);
+			vec3.scale(relCamPos, relCamPos, 0.1);
+			vec3.add(camPos, camPos, relCamPos);
+			
 			console.log("w");
 			break;
 		case 68: //d
-			var temp = [0,0,0];
-			vec3.subtract(temp, lookAt, camPos)
-			vec3.rotateY(temp,temp,lookAt, 90* Math.PI / 180)
-			vec3.scale(temp, temp, 0.01);
-			//vec3.add(camPos, camPos, temp);
-			camPos[0] += temp[0];
-			camPos[2] += temp[2];
-			//vec3.add(lookAt, lookAt, temp);
+			vec3.rotateY(relCamPos, relCamPos, lookAt, 90 * Math.PI / 180);
+			vec3.scale(relCamPos, relCamPos, 0.01);
+
+			camPos[0] += relCamPos[0];
+			camPos[2] += relCamPos[2];
+			
+			//lookAt[0] += relCamPos[0];
+
 			console.log("d");
 			break;
 		case 83: //s
-			camPos[0] -= 0.1*(lookAt[0]-camPos[0]);
-			camPos[1] -= 0.1*(lookAt[1]-camPos[1]);
-			camPos[2] -= 0.1*(lookAt[2]-camPos[2]);
+			vec3.scale(relCamPos, relCamPos, 0.1);
+			vec3.sub(camPos, camPos, relCamPos);
+			
 			console.log("s");
 			break;
 	}
 
-	mat4.lookAt(viewMatrix,camPos,lookAt,[0,1,0]);
+	mat4.lookAt(viewMatrix, camPos, lookAt, [0,1,0]);
 	gl.uniformMatrix4fv(viewMatrixLoc, false, viewMatrix);
 }
 
 function handleMouse(e)
 {
-	console.log("Mouse");
-	//document.lockMouse(e);
+	console.log("Mouse:");
+	console.log("movementX: " + e.movementX);
+	console.log("movementY: " + e.movementY);
 	
-	var x = e.screenX;
-	console.log("Screen: " + x);
-	console.log("Client: " + e.clientX);
-
-	var dX = x- LastX;
-	
-	vec3.rotateY(lookAt ,lookAt,camPos, dX*0.01* Math.PI / 180)
-	
-	LastX = x;
+	vec3.rotateY(lookAt ,lookAt, camPos, e.movementX * 0.01 * Math.PI / 180);
+	vec3.rotateX(lookAt ,lookAt, camPos, -e.movementY * 0.01 * Math.PI / 180);
 	
 	mat4.lookAt(viewMatrix,camPos,lookAt,[0,1,0]);
 	gl.uniformMatrix4fv(viewMatrixLoc, false, viewMatrix);
+}
+
+function plChange(e)
+{
+	if (document.pointerLockElement == canvas)
+	{
+		document.addEventListener("mousemove", handleMouse);
+	}
+	else
+	{
+		document.removeEventListener("mousemove", handleMouse);
+	}
+}
+
+function handleClick(e)
+{
+	canvas.requestPointerLock();
+	document.addEventListener("pointerlockchange", plChange);
 }
 
 window.onload = function init()
@@ -98,7 +105,7 @@ window.onload = function init()
 	
 	canvas = document.getElementById("gl-canvas");
 	document.addEventListener("keydown", handleKeyPress);
-	document.addEventListener("mousemove", handleMouse);
+	document.addEventListener("click", handleClick);
 	gl = WebGLUtils.setupWebGL(canvas);
 	if (!gl) { alert("WebGL isn't available"); }
 	
@@ -273,21 +280,20 @@ window.onload = function init()
 	
 	projectionMatrixLoc = gl.getUniformLocation(program, "projectionMatrix");
 	gl.uniformMatrix4fv(projectionMatrixLoc, false, projectionMatrix);
-    
-	rotationSpeed = 0;
-	LastX = 0;
+	
+	var havePointerLock = 'pointerLockElement' in document ||
+    'mozPointerLockElement' in document ||
+    'webkitPointerLockElement' in document;
+	
+	console.log("Your browser supports Pointer Lock: " + (havePointerLock?"Yes!":"No!"));
 	
 	render(); 
 };
 
 function render()
 {
-	mat4.rotate(modelMatrix,modelMatrix, rotationSpeed * Math.PI / 180,[0,1,0]);
-	gl.uniformMatrix4fv(modelMatrixLoc, false, modelMatrix);
-	
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	gl.drawArrays(gl.TRIANGLES, 0, vertices.length/3);
 	requestAnimFrame(render);
 }
-
 
