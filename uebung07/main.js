@@ -5,6 +5,24 @@ var eye;
 var target;
 var up;
 
+var modelMatrix;
+var modelMatrixLoc;
+
+var rotationY = 0.01;
+var yAxis = vec3.fromValues(0, 1, 0);
+var rotationX = 0.01;
+var xAxis = vec3.fromValues(1, 0, 0);
+var rotationZ = 0.01;
+var zAxis = vec3.fromValues(0, 0, 1);
+
+var projectionMatrix = mat4.create();
+var projectionMatrixLoc;
+var viewMatrix = mat4.create();
+var viewMatrixLoc;
+
+var lastMousePosX = 0;
+var lastMousePosY = 0;
+
 var objects = [];
 
 window.onload = function init() {
@@ -27,6 +45,7 @@ window.onload = function init() {
   // Init shader programs
 
   defaultProgram = initShaders(gl, "vertex-shader", "fragment-shader");
+  gl.useProgram(defaultProgram);
 
   // Create beach
   var beachStr = document.getElementById("plane.obj").innerHTML;
@@ -84,22 +103,45 @@ window.onload = function init() {
 
 
   // Setup projectionMatrix (perspective)*/
+  modelMatrix = mat4.create();
+
+  rotationY = Math.PI * 0.25;
+  mat4.rotate(modelMatrix, modelMatrix, rotationY, yAxis);
+  rotationX = Math.PI * 0.25;
+  mat4.rotate(modelMatrix, modelMatrix, rotationX, xAxis);
+  rotationZ = Math.PI * 0.5;
+  mat4.rotate(modelMatrix, modelMatrix, rotationZ, zAxis);
+
+  modelMatrixLoc = gl.getUniformLocation(defaultProgram, "modelMatrix");
+  gl.uniformMatrix4fv(modelMatrixLoc, false, modelMatrix);
+
+  // Set and load projectionMatrix (perspective)
+
   var fovy = Math.PI * 0.25; // 90 degrees
   var aspectRatio = canvas.width / canvas.height;
   var nearClippingPlane = 0.5;
-  var farClippingPlane = 100;
-
-  projectionMatrix = mat4.create();
+  var farClippingPlane = 10;
   mat4.perspective(projectionMatrix, fovy, aspectRatio, nearClippingPlane, farClippingPlane);
 
-  //setup viewMatrix (camera)
+  projectionMatrixLoc = gl.getUniformLocation(defaultProgram, "projectionMatrix");
+  gl.uniformMatrix4fv(projectionMatrixLoc, false, projectionMatrix);
 
-  eye = vec3.fromValues(-10.0, 1.0, -10.0);
-  target = vec3.fromValues(5.0, 1.0, 5.0);
+  //set and load viewMatrix (camera)
+
+  eye = vec3.fromValues(0.0, 0.0, 3.0);
+  target = vec3.fromValues(0.0, 0.0, -5.0);
   up = vec3.fromValues(0.0, 1.0, 0.0);
 
-  viewMatrix = mat4.create();
   mat4.lookAt(viewMatrix, eye, target, up);
+
+  viewMatrixLoc = gl.getUniformLocation(defaultProgram, "viewMatrix");
+  gl.uniformMatrix4fv(viewMatrixLoc, false, viewMatrix);
+
+  // Bind input events to functions
+  document.onkeydown = handleKeyDown;
+  document.onmousemove = handleMouseMove;
+  lastMousePosX = canvas.width / 2;
+  lastMousePosY = canvas.height / 2;
 
   render();
 };
@@ -118,6 +160,15 @@ var RenderObject = function(transform, color, shader, buffer, bufferLength) {
 }
 
 function render() {
+
+  rotationY = 0.01;
+  mat4.rotate(modelMatrix, modelMatrix, rotationY, yAxis);
+  rotationX = 0.01;
+  mat4.rotate(modelMatrix, modelMatrix, rotationX, xAxis);
+  rotationZ = 0.01;
+  mat4.rotate(modelMatrix, modelMatrix, rotationZ, zAxis);
+  gl.uniformMatrix4fv(modelMatrixLoc, false, modelMatrix);
+
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   // Set shader program
@@ -148,4 +199,78 @@ function render() {
   });
 
   requestAnimFrame(render);
+}
+
+function handleKeyDown(event) {
+  // Extract view direction for xz plane
+  var viewDirection = vec3.fromValues(target[0], 0, target[2]);
+  vec3.normalize(viewDirection, viewDirection);
+
+  // Compute strafe direction
+  var strafeDirection = vec3.create();
+  vec3.cross(strafeDirection, viewDirection, up);
+
+  // Up
+  if (String.fromCharCode(event.keyCode) == 'W') {
+    // Add view direction to eye position AND to target
+    vec3.add(eye, eye, viewDirection);
+    vec3.add(target, target, viewDirection);
+    mat4.lookAt(viewMatrix, eye, target, up);
+
+    gl.uniformMatrix4fv(viewMatrixLoc, false, viewMatrix);
+  }
+  // Down
+  if (String.fromCharCode(event.keyCode) == 'S') {
+    // Subtract view direction to eye position AND to target
+    vec3.subtract(eye, eye, viewDirection);
+    vec3.subtract(target, target, viewDirection);
+    mat4.lookAt(viewMatrix, eye, target, up);
+
+    gl.uniformMatrix4fv(viewMatrixLoc, false, viewMatrix);
+  }
+  // Right
+  if (String.fromCharCode(event.keyCode) == 'D') {
+    // Add strafe direction to eye position AND to target
+    vec3.add(eye, eye, strafeDirection);
+    vec3.add(target, target, strafeDirection);
+    mat4.lookAt(viewMatrix, eye, target, up);
+
+    gl.uniformMatrix4fv(viewMatrixLoc, false, viewMatrix);
+  }
+  // Left
+  if (String.fromCharCode(event.keyCode) == 'A') {
+    // Subtract strafe direction to eye position AND to target
+    vec3.subtract(eye, eye, strafeDirection);
+    vec3.subtract(target, target, strafeDirection);
+    mat4.lookAt(viewMatrix, eye, target, up);
+
+    gl.uniformMatrix4fv(viewMatrixLoc, false, viewMatrix);
+  }
+}
+
+function handleMouseMove(event) {
+  // Remove the offset of the canvas rectangle from mouse coordinates
+  var x = event.clientX - canvas.getBoundingClientRect().left;
+  var y = event.clientY - canvas.getBoundingClientRect().top;
+
+  var newX = lastMousePosX - x;
+  lastMousePosX = x;
+
+  var newY = lastMousePosY - y;
+  lastMousePosY = y;
+
+  var normedX = normValue(newX, -canvas.width, canvas.width, -2, 2);
+  var normedY = normValue(newY, -canvas.height, canvas.height, -0.5, 0.5);
+
+  vec3.rotateY(target, target, eye, normedX * Math.PI);
+  vec3.rotateX(target, target, eye, normedY * Math.PI);
+
+  mat4.lookAt(viewMatrix, eye, target, up);
+
+  gl.uniformMatrix4fv(viewMatrixLoc, false, viewMatrix);
+}
+
+/* Norms a value to an intervall */
+function normValue(value, valueMin, valueMax, resultMin, resultMax) {
+  return (value - valueMin) * ((resultMax - resultMin) / (valueMax - valueMin)) + resultMin;
 }
