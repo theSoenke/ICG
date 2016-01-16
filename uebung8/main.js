@@ -18,22 +18,23 @@ var waterAkk;
 
 var objects = [];
 
-var RenderObject = function(name, transform, shader, positionBuffer, colorBuffer, bufferLength)
+var RenderObject = function(name, transform, shader, positionBuffer, colorBuffer, normalBuffer, bufferLength)
 {
 	this.name = name;
 	this.transform = transform;
 	this.shader = shader;
 	this.positionBuffer = positionBuffer;
 	this.colorBuffer = colorBuffer;
+	this.normalBuffer = normalBuffer;
 	this.bufferLength = bufferLength;
 	this.indexBuffer;
-	
+
 	this.rotationY = 0.01;
 	this.rotationX = 0.01;
 	this.rotationZ = 0.01;
 }
 
-RenderObject.prototype.rotate = function(angle, axis) 
+RenderObject.prototype.rotate = function(angle, axis)
 {
 	mat4.rotate(this.transform, this.transform, angle, axis);
 }
@@ -52,7 +53,7 @@ window.onload = function init()
 	document.addEventListener("click", handleClick);
 	gl = WebGLUtils.setupWebGL(canvas);
 	if (!gl) { alert("WebGL isn't available"); }
-	
+
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LESS);
 
@@ -64,8 +65,9 @@ window.onload = function init()
 	// Init shader programs
 
 	var defaultProgram = initShaders(gl, "vertex-shader", "fragment-shader");
+	var phongProgram = initShaders(gl, "vertex-phong-shader", "fragment-phong-shader");
 	var waterProgram = initShaders(gl, "water-vertex-shader", "water-fragment-shader");
-	
+
 	//// Würfel ////
 	var cubeString = document.getElementById("cube.obj").innerHTML;
 	cubeMesh = new OBJ.Mesh(cubeString);
@@ -75,11 +77,11 @@ window.onload = function init()
 	var cubeColors = generateRandomColors(cubeMesh.vertexBuffer.numItems);
 	gl.bufferData(gl.ARRAY_BUFFER, cubeColors, gl.STATIC_DRAW);
 	// Create Cube
-	var cubeObject = new RenderObject("cube", mat4.create(), defaultProgram, cubeMesh.vertexBuffer, cubeColorBuffer, cubeMesh.indexBuffer.numItems);
+	var cubeObject = new RenderObject("cube", mat4.create(), phongProgram, cubeMesh.vertexBuffer, cubeColorBuffer, cubeMesh.vertexNormal, cubeMesh.indexBuffer.numItems);
 	cubeObject.indexBuffer = cubeMesh.indexBuffer;
 
 	mat4.scale(cubeObject.transform, cubeObject.transform, [-0.5, -0.5, -0.5]);
-	
+
 	// Push object on the stack
 	objects.push(cubeObject);
 
@@ -93,9 +95,9 @@ window.onload = function init()
 	gl.bufferData(gl.ARRAY_BUFFER, isleColors, gl.STATIC_DRAW);
 
 	// Create Isle
-	var isleObject = new RenderObject("isle", mat4.create(), defaultProgram, isleMesh.vertexBuffer, isleColorBuffer, isleMesh.indexBuffer.numItems);
+	var isleObject = new RenderObject("isle", mat4.create(), defaultProgram, isleMesh.vertexBuffer, isleColorBuffer, cubeMesh.vertexNormal, isleMesh.indexBuffer.numItems);
 	isleObject.indexBuffer = isleMesh.indexBuffer;
-	
+
 	// Push object on the stack
 	objects.push(isleObject);
 
@@ -109,12 +111,12 @@ window.onload = function init()
 	gl.bufferData(gl.ARRAY_BUFFER, waterColors, gl.STATIC_DRAW);
 
 	// Create Isle
-	var waterObject = new RenderObject("water", mat4.create(), waterProgram, waterMesh.vertexBuffer, waterColorBuffer, waterMesh.indexBuffer.numItems);
+	var waterObject = new RenderObject("water", mat4.create(), waterProgram, waterMesh.vertexBuffer, waterColorBuffer, cubeMesh.vertexNormal, waterMesh.indexBuffer.numItems);
 	waterObject.indexBuffer = waterMesh.indexBuffer;
 
 	mat4.scale(waterObject.transform, waterObject.transform, [5.0, 1.0, 5.0]);
 	mat4.translate(waterObject.transform, waterObject.transform, [0.0, -2.0, 0.0]);
-	
+
 	// Push object on the stack
 	objects.push(waterObject);
 
@@ -128,12 +130,12 @@ window.onload = function init()
 	gl.bufferData(gl.ARRAY_BUFFER, palm1Colors, gl.STATIC_DRAW);
 
 	// Create Palm
-	var palm1Object = new RenderObject("palm1", mat4.create(), defaultProgram, palm1Mesh.vertexBuffer, palm1ColorBuffer, palm1Mesh.indexBuffer.numItems);
+	var palm1Object = new RenderObject("palm1", mat4.create(), phongProgram, palm1Mesh.vertexBuffer, palm1ColorBuffer, cubeMesh.vertexNormal, palm1Mesh.indexBuffer.numItems);
 	palm1Object.indexBuffer = palm1Mesh.indexBuffer;
 
 	mat4.rotateX(palm1Object.transform, palm1Object.transform, grad2Bogen(-90));
 	mat4.translate(palm1Object.transform, palm1Object.transform, [3.5, 3.5, 0.4]);
-	
+
 	// Push object on the stack
 	objects.push(palm1Object);
 
@@ -146,12 +148,12 @@ window.onload = function init()
 	gl.bufferData(gl.ARRAY_BUFFER, palm2Colors, gl.STATIC_DRAW);
 
 	// Create Palm
-	var palm2Object = new RenderObject("palm2", mat4.create(), defaultProgram, palm2Mesh.vertexBuffer, palm2ColorBuffer, palm2Mesh.indexBuffer.numItems);
+	var palm2Object = new RenderObject("palm2", mat4.create(), phongProgram, palm2Mesh.vertexBuffer, palm2ColorBuffer, cubeMesh.vertexNormal, palm2Mesh.indexBuffer.numItems);
 	palm2Object.indexBuffer = palm2Mesh.indexBuffer;
 
 	mat4.rotateX(palm2Object.transform, palm2Object.transform, grad2Bogen(-90));
 	mat4.translate(palm2Object.transform, palm2Object.transform, [-3.5, 3.5, 0.4]);
-	
+
 	// Push object on the stack
 	objects.push(palm2Object);
 
@@ -164,12 +166,12 @@ window.onload = function init()
 	gl.bufferData(gl.ARRAY_BUFFER, palm3Colors, gl.STATIC_DRAW);
 
 	// Create Palm
-	var palm3Object = new RenderObject("palm3", mat4.create(), defaultProgram, palm3Mesh.vertexBuffer, palm3ColorBuffer, palm3Mesh.indexBuffer.numItems);
+	var palm3Object = new RenderObject("palm3", mat4.create(), phongProgram, palm3Mesh.vertexBuffer, palm3ColorBuffer, cubeMesh.vertexNormal, palm3Mesh.indexBuffer.numItems);
 	palm3Object.indexBuffer = palm3Mesh.indexBuffer;
 
 	mat4.rotateX(palm3Object.transform, palm3Object.transform, grad2Bogen(-90));
 	mat4.translate(palm3Object.transform, palm3Object.transform, [-3.5, -3.5, 0.4]);
-	
+
 	// Push object on the stack
 	objects.push(palm3Object);
 
@@ -182,22 +184,22 @@ window.onload = function init()
 	gl.bufferData(gl.ARRAY_BUFFER, palm4Colors, gl.STATIC_DRAW);
 
 	// Create Palm
-	var palm4Object = new RenderObject("palm4", mat4.create(), defaultProgram, palm4Mesh.vertexBuffer, palm4ColorBuffer, palm4Mesh.indexBuffer.numItems);
+	var palm4Object = new RenderObject("palm4", mat4.create(), phongProgram, palm4Mesh.vertexBuffer, palm4ColorBuffer, cubeMesh.vertexNormal, palm4Mesh.indexBuffer.numItems);
 	palm4Object.indexBuffer = palm4Mesh.indexBuffer;
 
 	mat4.rotateX(palm4Object.transform, palm4Object.transform, grad2Bogen(-90));
 	mat4.translate(palm4Object.transform, palm4Object.transform, [3.5, -3.5, 0.4]);
-	
+
 	// Push object on the stack
 	objects.push(palm4Object);
-	
+
 	// Setup projectionMatrix (perspective)
-	
+
 	aspectRatio = canvas.width / canvas.height;
-	
+
 	projectionMatrix = mat4.create();
 	mat4.perspective(projectionMatrix, fovy, aspectRatio, nearClippingPlane, farClippingPlane);
-	
+
 	//setup viewMatrix (camera)
 
 	eye = vec3.fromValues(0.0, 0.0, 5.0);
@@ -210,14 +212,14 @@ window.onload = function init()
 
 	viewMatrix = mat4.create();
 	mat4.lookAt(viewMatrix, eye, lookAt, up);
-    
+
 	render();
 };
 
 function render()
-{	
+{
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	
+
 	objects.forEach(function(object) {
 		if (object.name == "cube") {
 			object.rotate(grad2Bogen(1), [1.0, 1.0, 1.0]);
@@ -248,7 +250,15 @@ function render()
 		gl.bindBuffer(gl.ARRAY_BUFFER, object.colorBuffer);
 		gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
 		gl.enableVertexAttribArray(vColor);
-		
+
+		if(object.name != "water")
+		{
+			var vNormal = gl.getAttribLocation(object.shader, "vNormal");
+			gl.bindBuffer(gl.ARRAY_BUFFER, object.normalBuffer);
+			gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
+			gl.enableVertexAttribArray(vNormal);
+		}
+
 		// Set uniforms
 		gl.uniformMatrix4fv(projectionMatrixLoc, false, projectionMatrix);
 		gl.uniformMatrix4fv(viewMatrixLoc, false, viewMatrix);
@@ -258,7 +268,7 @@ function render()
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.indexBuffer);
 		gl.drawElements(gl.TRIANGLES, object.bufferLength, gl.UNSIGNED_SHORT, 0);
 	});
-	
+
 	requestAnimFrame(render);
 }
 
@@ -290,7 +300,7 @@ function handleKeyPress(e)
 }
 
 function handleMouse(e)
-{	
+{
 	console.log("x: "+e.movementX+", y: "+e.movementY);
 	vec3.rotateY(lookAt ,lookAt, eye, -e.movementX * 0.05 * Math.PI / 180);
 	vec3.rotateX(lookAt ,lookAt, eye, -e.movementY * 0.05 * Math.PI / 180);
@@ -299,7 +309,7 @@ function handleMouse(e)
 	vec3.rotateY(behind, behind, [0.0, 0.0, 0.0], -e.movementX * 0.05 * Math.PI / 180);
 	vec3.rotateY(left, left, [0.0, 0.0, 0.0], -e.movementX * 0.05 * Math.PI / 180);
 	vec3.rotateY(right, right, [0.0, 0.0, 0.0], -e.movementX * 0.05 * Math.PI / 180);
-	
+
 	mat4.lookAt(viewMatrix,eye,lookAt,up);
 }
 
@@ -347,7 +357,7 @@ function generatePalmColors(akk) {
 		while (red < 0.5) {
 			red = Math.random();
 		}
-		
+
 		colorArray.push(red, 0.6, 0.1, 1.0);
 	}
 	return new Float32Array(colorArray);
@@ -360,7 +370,7 @@ function generateWaterColors(akk) {
 		while (blue > 0.2) {
 			blue = Math.random();
 		}
-		
+
 		colorArray.push(blue, blue, 1.0, 0.7);
 	}
 	return new Float32Array(colorArray);
