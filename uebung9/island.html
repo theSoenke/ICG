@@ -1,0 +1,152 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<title>Zettel 8 - Aufgabe 3</title>
+		
+		<script id="vertex-shader" type="x-shader/x-vertex">
+			attribute vec4 vPosition;
+			
+			uniform mat4 modelMatrix;
+			uniform mat4 projectionMatrix;
+			uniform mat4 viewMatrix;
+			
+			void main()
+			{
+				gl_Position = projectionMatrix * viewMatrix * modelMatrix * vPosition;
+			}
+		</script>
+		<script id="fragment-shader" type="x-shader/x-fragment">
+			precision mediump float;
+			
+			uniform vec4 objectColor;
+			
+			void main()
+			{					
+				gl_FragColor = objectColor;
+			}
+		</script>
+		
+		<script id="vertex-shader-lighting" type="x-shader/x-vertex">
+			attribute vec4 vPosition;
+			attribute vec4 vNormal;
+			attribute vec2 vTexCoords;
+			
+			// position of the light in world coordinates
+			uniform vec3 lightPosition;
+			
+			// transformation matrices
+			uniform mat4 modelMatrix;
+			uniform mat4 projectionMatrix;
+			uniform mat4 viewMatrix;
+			
+			// pre-computed normal matrix
+			uniform mat4 normalMatrix;
+			
+			varying vec4 position;
+			varying vec4 lightPos;
+			varying vec4 normal;
+			varying vec2 fTexCoords;
+			
+			void main()
+			{
+				lightPos = viewMatrix * vec4(lightPosition, 1);
+				normal = normalMatrix * vNormal;
+				fTexCoords = vTexCoords;
+				
+				mat4 modelViewMatrix = viewMatrix * modelMatrix;
+				position = modelViewMatrix * vPosition;
+				
+				gl_Position = projectionMatrix * position;
+			}
+		</script>
+		<script id="fragment-shader-lighting" type="x-shader/x-fragment">
+			precision mediump float;
+			
+			// ambient intensity
+			uniform vec4 Ia;
+			
+			// diffuse and specular intensities of the light source
+			uniform vec4 Id;
+			uniform vec4 Is;
+			
+			// ambient, diffuse and specular reflection factors (object specific)
+			uniform vec4 ka;
+			uniform vec4 ks;
+
+			uniform sampler2D map;
+			uniform sampler2D bumpMap;
+
+			uniform mat4 fNormalMatrix;
+			
+			// constant, linear and quadratic attenuation factors
+			const float c1 = 1.0;
+			const float c2 = 0.0005;
+			const float c3 = 0.000003;
+			
+			// specular exponent
+			const float n = 5.0;
+			
+			varying vec4 position;
+			varying vec4 lightPos;
+			varying vec4 normal;
+			varying vec2 fTexCoords;
+			
+			void main()
+			{					
+				vec3 tangent;
+				vec3 k1 = cross(normal.xyz, vec3(0.0, 0.0, 1.0));
+				vec3 k2 = cross(normal.xyz, vec3(0.0, 1.0, 0.0));
+				if (length(k1) > length(k2)) {
+				 tangent = normalize(k1);
+				} else {
+				 tangent = normalize(k2);
+				}
+				vec3 n1 = normalize(fNormalMatrix * normal).xyz;
+				vec3 t = normalize(fNormalMatrix * vec4(tangent, 1.0)).xyz;
+				vec3 b = cross(n1, t);
+
+				mat3 tbnMatrix;
+				tbnMatrix[0] = t;
+				tbnMatrix[1] = b;
+				tbnMatrix[2] = n1;
+
+				// light direction
+				vec3 L = normalize((lightPos - position).xyz);
+				// normal
+				vec4 bumpNormal = vec4(tbnMatrix * (texture2D(bumpMap, vec2(fTexCoords.s, fTexCoords.t)) * 2.0 - 1.0).xyz, 1.0);
+				vec3 N = normalize((bumpNormal).xyz);
+				
+				// view direction
+				vec3 V = normalize((-position).xyz);
+				// reflection direction
+				vec3 R = reflect(-L, N);	
+
+				vec4 diffuseColor = texture2D(map, vec2(fTexCoords.s, fTexCoords.t));
+					
+				// distance between light source and vertex
+				float distance = length(lightPos - position);
+				// distance attenuation
+				float fAtt = min(1.0 / (c1 + c2 * distance + c3 * pow(distance, 2.0)), 1.0);
+				
+				gl_FragColor = Ia * ka + fAtt * (Id * diffuseColor * max(dot(N, L), 0.0) + Is * ks * pow(max(0.0, dot(R, V)), n));
+			}
+		</script>
+
+		<script type="text/javascript" src="../Common/webgl-utils.js">
+		</script>
+		<script type="text/javascript" src="../Common/initShaders.js">
+		</script>
+		<script type="text/javascript" src="../Common/gl-matrix.js">
+		</script>
+		<script type="text/javascript" src="island.js">
+		</script>
+	</head>
+	<body>
+
+		<canvas id="gl-canvas" width="512" height="512">
+			If you see this, your browser doesn't support WebGL.
+		</canvas>
+		
+	</body>
+</html>
